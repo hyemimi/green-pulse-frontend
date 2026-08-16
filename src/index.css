@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: #0f111e;
+    color: #ffffff;
+    font-family: Inter, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-card border border-process-line bg-process-panel;
+  }
+
+  .kpi-card {
+    @apply rounded-kpi border border-process-line bg-process-panel p-5;
+  }
+
+  .chip {
+    @apply rounded-full border border-process-line bg-process-bg px-2 py-1 text-xs font-semibold text-process-muted;
+  }
+
+  .chip-active-cyan {
+    @apply border-process-cyan bg-process-cyan/10 font-bold text-process-cyan;
+  }
+
+  .chip-active-orange {
+    @apply border-process-orange bg-process-orange/10 font-bold text-process-orange;
+  }
+}

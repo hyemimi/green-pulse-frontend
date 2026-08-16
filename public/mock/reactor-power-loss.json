@@ -1,0 +1,56 @@
+[
+  {
+    "id": "A_R1",
+    "label": "Reactor A_R1",
+    "loss": 0.28,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.733,
+    "faultCount": 6318,
+    "status": "caution"
+  },
+  {
+    "id": "B_R1",
+    "label": "Reactor B_R1",
+    "loss": 0.26,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.673,
+    "faultCount": 5808,
+    "status": "caution"
+  },
+  {
+    "id": "B_R3",
+    "label": "Reactor B_R3",
+    "loss": 0.25,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.654,
+    "faultCount": 5647,
+    "status": "caution"
+  },
+  {
+    "id": "A_R3",
+    "label": "Reactor A_R3",
+    "loss": 0.21,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.544,
+    "faultCount": 4678,
+    "status": "caution"
+  },
+  {
+    "id": "A_R2",
+    "label": "Reactor A_R2",
+    "loss": 0.14,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.347,
+    "faultCount": 2998,
+    "status": "caution"
+  },
+  {
+    "id": "B_R2",
+    "label": "Reactor B_R2",
+    "loss": 0.11,
+    "averagePowerKw": 41.4,
+    "averageEfficiencyLossPct": 0.284,
+    "faultCount": 2452,
+    "status": "caution"
+  }
+]
