@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import type { EsgKpi, EsgPerformance, EsgTone, MonthlySaving, QuarterMilestone } from "../../api/esg";
 import { useEsgPerformance } from "../../hooks/useEsgPerformance";
+import { SegmentedNavigation } from "../common/SegmentedNavigation";
 
 const leafIcon = "https://www.figma.com/api/mcp/asset/79f16789-ef02-40b0-80b9-0ed803465846.svg";
 const calendarIcon = "https://www.figma.com/api/mcp/asset/af3a09d1-c7aa-4753-a610-5479b5415294.svg";
@@ -43,6 +44,7 @@ function EsgHeader({ data }: { data: EsgPerformance }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-4">
+        <SegmentedNavigation active="esg" tone="green" />
         <div className="flex items-center gap-2 rounded-lg border border-[#20273d] bg-[#121626] px-3 py-1.5">
           <img alt="" className="size-4" src={calendarIcon} />
           <p className="whitespace-nowrap text-[13px] font-semibold text-white">{data.period}</p>

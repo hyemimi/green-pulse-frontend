@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { SegmentedNavigation } from "../common/SegmentedNavigation";
 import { formatClock } from "../../utils/date";
 
 function DashboardHeaderComponent() {
@@ -12,6 +13,7 @@ function DashboardHeaderComponent() {
         <h1 className="whitespace-nowrap text-2xl font-extrabold">AI 기반 화학공정 에너지·이상 모니터링</h1>
       </div>
       <div className="flex items-center gap-4">
+        <SegmentedNavigation active="process" tone="cyan" />
         <span className="rounded border border-process-green bg-process-green/10 px-2.5 py-1.5 text-xs font-semibold text-process-green">SYSTEM ONLINE</span>
         <p className="whitespace-nowrap text-sm text-process-muted">{formatClock()}</p>
       </div>
