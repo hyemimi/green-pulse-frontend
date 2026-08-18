@@ -1,3 +1,5 @@
+import { fetchServerJson } from "./client";
+
 export type EsgTone = "cyan" | "green" | "amber";
 
 export type EsgKpi = {
@@ -73,29 +75,10 @@ const carbonIcon = "https://www.figma.com/api/mcp/asset/fb2b2d86-c358-4337-818e-
 const costIcon = "https://www.figma.com/api/mcp/asset/c31050bc-8575-4ab3-ac4a-3d65ea1c6d3f.svg";
 const detectionIcon = "https://www.figma.com/api/mcp/asset/cbe62bd5-1c41-419c-9625-20472b7b66ff.svg";
 
-function getApiBaseUrl() {
-  const configuredUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-  const fallbackUrl = import.meta.env.DEV
-    ? "http://localhost:3000"
-    : "https://dev-green-pulse-backend.onrender.com";
-
-  return (configuredUrl || fallbackUrl).replace(/\/$/, "");
-}
-
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`);
-
-  if (!response.ok) {
-    throw new Error(`ESG API 요청에 실패했습니다. (${response.status})`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 export async function fetchEsgPerformance(): Promise<EsgPerformance> {
   const [summary, monthly] = await Promise.all([
-    fetchJson<BackendEsgSummary>("/api/esg/summary?holdMin=0"),
-    fetchJson<BackendMonthlySaving[]>("/api/esg/monthly?holdMin=0"),
+    fetchServerJson<BackendEsgSummary>("/api/esg/summary?holdMin=0"),
+    fetchServerJson<BackendMonthlySaving[]>("/api/esg/monthly?holdMin=0"),
   ]);
 
   const monthlySavings = monthly.map((row) => ({
