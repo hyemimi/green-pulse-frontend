@@ -9,21 +9,22 @@ import { useDashboardSummary } from "./hooks/useDashboardSummary";
 import { useDetections } from "./hooks/useDetections";
 import { useReactorPowerLoss } from "./hooks/useReactorPowerLoss";
 import { useSensorTrends } from "./hooks/useSensorTrends";
+import { DEMO_REACTOR_ID } from "./constants/demoTimeline";
 
 function ProcessDashboardPage() {
-  const [selectedReactorId, setSelectedReactorId] = useState("A_R2");
+  const [selectedReactorId, setSelectedReactorId] = useState(DEMO_REACTOR_ID);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<number | null>(null);
   const [playbackMinute, setPlaybackMinute] = useState(0);
   const { data: detections = [], dataUpdatedAt } = useDetections();
   const { data: sensorTrend } = useSensorTrends(selectedReactorId, selectedEpisodeId);
   const handleSelectReactor = (reactorId: string) => {
-  setSelectedReactorId(reactorId);
-  setSelectedEpisodeId(null);
-};
+    setSelectedReactorId(reactorId);
+    setSelectedEpisodeId(null);
+  };
   const handleSelectEpisode = (episodeId: number, reactorId: string) => {
-  setSelectedEpisodeId(episodeId);
-  setSelectedReactorId(reactorId);
-};
+    setSelectedEpisodeId(episodeId);
+    setSelectedReactorId(reactorId);
+  };
   const { data: reactorLossData } = useReactorPowerLoss(playbackMinute);
   const reactorLosses = reactorLossData?.reactors ?? [];
   const summary = useDashboardSummary(detections);

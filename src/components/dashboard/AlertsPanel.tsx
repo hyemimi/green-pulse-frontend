@@ -8,6 +8,7 @@ import {
 import { useDetections } from "../../hooks/useDetections";
 import type { Detection } from "../../api/detections";
 import type { AlertItem, Severity } from "../../types/dashboard";
+import { formatTimeInSeoul } from "../../utils/date";
 
 function severityFor(score: number): Severity {
   if (score >= 0.9) return "critical";
@@ -34,7 +35,7 @@ function faultTypeLabelFor(faultType: string) {
 
 function toAlertItem(detection: Detection): AlertItem {
   const severity = severityFor(detection.score);
-  const time = new Date(detection.detected_at).toISOString().slice(11, 16);
+  const time = formatTimeInSeoul(detection.detected_at);
 
   return {
     severity,

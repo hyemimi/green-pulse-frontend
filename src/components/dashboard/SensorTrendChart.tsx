@@ -74,19 +74,17 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
 
   const chart = useMemo(() => {
     const points = trend?.points ?? [];
-    const fallbackIndex = Math.max(
-      0,
-      points.findIndex((point) => point.timestamp === trend?.detectedAt),
-    );
+    const detectedPointIndex = trend?.detectedAt
+      ? points.findIndex((point) => point.timestamp === trend.detectedAt)
+      : -1;
+    const onsetPointIndex = trend?.faultOnset
+      ? points.findIndex((point) => point.timestamp === trend.faultOnset)
+      : -1;
+    const hasAnomaly = onsetPointIndex >= 0 && detectedPointIndex >= 0;
+    const fallbackIndex = detectedPointIndex >= 0 ? detectedPointIndex : Math.max(points.length - 1, 0);
     const activeIndex = Math.min(selectedIndex ?? fallbackIndex, Math.max(points.length - 1, 0));
-    const onsetIndex = Math.max(
-      0,
-      points.findIndex((point) => point.timestamp === trend?.faultOnset),
-    );
-    const detectedIndex = Math.max(
-      onsetIndex + 1,
-      points.findIndex((point) => point.timestamp === trend?.detectedAt),
-    );
+    const onsetIndex = Math.max(onsetPointIndex, 0);
+    const detectedIndex = Math.max(detectedPointIndex, onsetIndex + 1);
     const step = points.length > 1 ? CHART_WIDTH / (points.length - 1) : 40;
 
     // 센서마다 자기만의 세로 구역(lane)을 갖게 해서, 겹치지 않고 각자 스케일로 그려지게 함
@@ -109,6 +107,7 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
       tickIndexes: getTickIndexes(points.length),
       series,
       step,
+      hasAnomaly,
       activeX: activeIndex * step,
       anomalyX: Math.max(0, onsetIndex * step - 8),
       anomalyWidth: Math.min(170, Math.max(86, (detectedIndex - onsetIndex + 2) * step)),
@@ -165,11 +164,7 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
             opacity="0.6"
           />
         ))}
-
-        {/* 이상 전조 감지 구간 - 5개 레인 전체를 관통하게 그대로 유지 */}
-        <rect x={chart.anomalyX} y={PLOT_OFFSET_Y} width={chart.anomalyWidth} height={PLOT_HEIGHT} rx="6" fill="rgba(249,115,22,0.10)" stroke="#f97316" />
-
-        {/* 레인별 라벨 */}
+        {chart.hasAnomaly ? <rect x={chart.anomalyX} y={PLOT_OFFSET_Y} width={chart.anomalyWidth} height={PLOT_HEIGHT} rx="6" fill="rgba(249,115,22,0.10)" stroke="#f97316" /> : null}
         {chart.series.map((series) => (
           <text key={`label-${series.key}`} x="4" y={series.laneOffset + 10} fontSize="10" fontWeight="700" fill={series.color}>
             {series.label} ({series.unit})
@@ -207,12 +202,13 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
             ))}
           </g>
         ))}
-
-        <foreignObject x={Math.min(chart.anomalyX + 16, CHART_WIDTH - 112)} y="14" width="112" height="26">
-          <div className="rounded-full border border-process-orange bg-process-orange/10 px-2 py-1 text-center text-[11px] font-bold text-process-orange">
-            이상 전조 감지 구간
-          </div>
-        </foreignObject>
+        {chart.hasAnomaly ? (
+          <foreignObject x={Math.min(chart.anomalyX + 16, CHART_WIDTH - 112)} y="14" width="112" height="26">
+            <div className="rounded-full border border-process-orange bg-process-orange/10 px-2 py-1 text-center text-[11px] font-bold text-process-orange">
+              이상 전조 감지 구간
+            </div>
+          </foreignObject>
+        ) : null}
         <rect
           x="0"
           y={PLOT_OFFSET_Y}

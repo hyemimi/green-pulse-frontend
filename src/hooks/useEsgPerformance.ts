@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchEsgPerformance } from "../api/esg";
 
-export function useEsgPerformance() {
+export function useEsgPerformance(selectedMonth: string) {
   return useQuery({
-    queryKey: ["esg-performance"],
-    queryFn: fetchEsgPerformance,
+    queryKey: ["esg-performance", selectedMonth],
+    queryFn: () => fetchEsgPerformance(selectedMonth),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });

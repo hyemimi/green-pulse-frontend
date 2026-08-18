@@ -1,17 +1,10 @@
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
+import { useSimulationClock } from "../../hooks/useSimulationClock";
 import { SegmentedNavigation } from "../common/SegmentedNavigation";
-import { formatClock, randomFebruary2024Date } from "../../utils/date";
+import { formatClock } from "../../utils/date";
 
 function DashboardHeaderComponent() {
-  const [simulationTime, setSimulationTime] = useState(randomFebruary2024Date);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setSimulationTime((current) => new Date(current.getTime() + 1_000));
-    }, 1_000);
-
-    return () => window.clearInterval(timer);
-  }, []);
+  const simulationTime = useSimulationClock();
 
   return (
     <header className="flex w-full items-center justify-between">
