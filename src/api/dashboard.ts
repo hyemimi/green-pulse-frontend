@@ -10,8 +10,8 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function fetchSensorTrends() {
-  return fetchJson<SensorTrendResponse>("http://localhost:3000/api/episodes/17/sensor-trend");
+export function fetchSensorTrends(reactorId: string) {
+  return fetchJson<SensorTrendResponse>(`http://localhost:3000/api/reactors/${reactorId}/sensor-trend`);
 }
 
 export function fetchReactorPowerLoss() {
