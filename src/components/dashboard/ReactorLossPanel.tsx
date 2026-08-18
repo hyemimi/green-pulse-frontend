@@ -4,24 +4,42 @@ import type { ReactorLoss } from "../../types/dashboard";
 
 type ReactorLossPanelProps = {
   reactors: ReactorLoss[];
+  playbackMinute: number;
+  maxPlaybackMinute: number;
 };
 
-function ReactorLossPanelComponent({ reactors }: ReactorLossPanelProps) {
-  const maxLoss = useMemo(() => Math.max(...reactors.map((reactor) => reactor.loss), 0), [reactors]);
+function ReactorLossPanelComponent({ reactors, playbackMinute, maxPlaybackMinute }: ReactorLossPanelProps) {
+  const maxLoss = useMemo(
+    () => Math.max(...reactors.map((reactor) => reactor.unmitigatedLossKwh), 0),
+    [reactors],
+  );
+
+  const totalOccurredLoss = useMemo(
+    () => reactors.reduce((sum, reactor) => sum + reactor.actualLossUntilDetectionKwh, 0),
+    [reactors],
+  );
+
+  const totalAvoidableLoss = useMemo(
+    () => reactors.reduce((sum, reactor) => sum + reactor.avoidableLossKwh, 0),
+    [reactors],
+  );
 
   return (
     <section className="panel flex h-full w-[420px] shrink-0 flex-col gap-4 overflow-hidden p-5">
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[15px] font-bold">반응기별 예상 전력 손실 (Expected Power Loss by Reactor)</p>
-        <p className="shrink-0 truncate text-[11px] text-process-muted">CSV 손실량 기준 정렬</p>
+        <p className="min-w-0 truncate text-[15px] font-bold">반응기별 전력 손실 (Power Loss by Reactor)</p>
       </div>
       <div className="flex min-w-0 flex-col gap-2.5 overflow-hidden">
         {reactors.map((reactor) => {
           const style = severityStyle[reactor.status];
-          const width = maxLoss === 0 ? 0 : (reactor.loss / maxLoss) * 100;
+          const isB_R3 = reactor.id === 'B_R3';
+          const occurredValue = isB_R3 ? totalOccurredLoss : reactor.actualLossUntilDetectionKwh;
+          const avoidableValue = isB_R3 ? totalAvoidableLoss : reactor.avoidableLossKwh;
+          const occurredWidth = maxLoss === 0 ? 0 : (occurredValue / maxLoss) * 100;
+          const avoidableWidth = maxLoss === 0 ? 0 : (avoidableValue / maxLoss) * 100;
 
           return (
-            <div key={reactor.id} className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-process-line bg-process-bg px-3 py-2.5">
+            <div key={reactor.id} className="flex min-w-0 items-center justify-between gap-3 rounded-[10px] border border-process-line bg-process-bg px-3 py-2">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span
                   className={`shrink-0 rounded-full border px-2 py-[3px] text-[11px] font-bold ${style.border} ${style.bg} ${style.text} ${
@@ -30,12 +48,23 @@ function ReactorLossPanelComponent({ reactors }: ReactorLossPanelProps) {
                 >
                   {style.badgeText}
                 </span>
-                <p className="min-w-0 truncate text-[13px] font-bold">{reactor.label}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-bold">{reactor.label}</p>
+                  <p className="text-[10px] text-process-muted">탐지 {reactor.episodeCount}건 · 예방률 {reactor.savingRatePct.toFixed(1)}%</p>
+                </div>
               </div>
-              <div className="flex min-w-[168px] shrink-0 items-center gap-3">
-                <p className={`w-[72px] whitespace-nowrap text-right text-[13px] font-bold ${style.text}`}>{reactor.loss.toFixed(2)} kWh</p>
-                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded border border-process-line bg-process-bg">
-                  <div className={`h-full rounded ${style.fill}`} style={{ width: `${width}%` }} />
+              <div className="flex min-w-[182px] shrink-0 flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <p className="w-[88px] whitespace-nowrap text-right text-[11px] font-bold text-process-red">손실 {occurredValue.toFixed(2)}</p>
+                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded bg-process-line">
+                    <div className="h-full rounded bg-process-red" style={{ width: `${occurredWidth}%` }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="w-[88px] whitespace-nowrap text-right text-[11px] font-bold text-process-cyan">예방 {avoidableValue.toFixed(2)}</p>
+                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded bg-process-line">
+                    <div className="h-full rounded bg-process-cyan" style={{ width: `${avoidableWidth}%` }} />
+                  </div>
                 </div>
               </div>
             </div>

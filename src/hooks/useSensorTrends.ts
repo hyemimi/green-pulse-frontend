@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchSensorTrends } from "../api/dashboard";
+import { fetchEpisodeSensorTrend, fetchSensorTrends } from "../api/dashboard";
 
-export function useSensorTrends() {
+export function useSensorTrends(reactorId: string, episodeId: number | null) {
   return useQuery({
-    queryKey: ["sensor-trends", "A_R2", "2024-03-14 19:06:00"],
-    queryFn: fetchSensorTrends,
+    queryKey: episodeId !== null ? ["sensor-trends", "episode", episodeId] : ["sensor-trends", "reactor", reactorId],
+    queryFn: () => (episodeId !== null ? fetchEpisodeSensorTrend(episodeId) : fetchSensorTrends(reactorId)),
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
   });
 }

@@ -1,8 +1,8 @@
 import type { AlertItem, Severity } from "../types/dashboard";
 
-const alertOctagon = "https://www.figma.com/api/mcp/asset/46ecd0f3-f60e-4653-9a24-7d742ccca95e.svg";
-const alertTriangle = "https://www.figma.com/api/mcp/asset/8c8cae9d-8fa9-48fb-b6f0-17af976e296b.svg";
-const checkCircle = "https://www.figma.com/api/mcp/asset/c9e0d973-0a90-4900-b68f-331aeb5b06f2.svg";
+export const alertOctagon = "https://www.figma.com/api/mcp/asset/46ecd0f3-f60e-4653-9a24-7d742ccca95e.svg";
+export const alertTriangle = "https://www.figma.com/api/mcp/asset/8c8cae9d-8fa9-48fb-b6f0-17af976e296b.svg";
+export const checkCircle = "https://www.figma.com/api/mcp/asset/c9e0d973-0a90-4900-b68f-331aeb5b06f2.svg";
 
 export const REACTOR_IDS = ["A_R1", "A_R2", "A_R3", "B_R1", "B_R2", "B_R3"] as const;
 export const INACTIVE_SENSOR_LABELS = ["유량", "진동", "전류"] as const;

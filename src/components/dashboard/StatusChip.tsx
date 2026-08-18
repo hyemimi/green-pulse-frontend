@@ -6,6 +6,7 @@ type StatusChipProps = {
   children: ReactNode;
   active?: boolean;
   tone?: ChipTone;
+  onClick?: () => void;
 };
 
 const activeToneClass: Record<ChipTone, string> = {
@@ -16,7 +17,19 @@ const activeToneClass: Record<ChipTone, string> = {
   red: "border-process-red bg-process-red/10 font-bold text-process-red",
 };
 
-function StatusChipComponent({ children, active, tone = "cyan" }: StatusChipProps) {
+function StatusChipComponent({ children, active, tone = "cyan", onClick }: StatusChipProps) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`chip whitespace-nowrap cursor-pointer transition-colors ${active ? activeToneClass[tone] : "opacity-70 hover:opacity-100"}`}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return <span className={`chip whitespace-nowrap ${active ? activeToneClass[tone] : ""}`}>{children}</span>;
 }
 
