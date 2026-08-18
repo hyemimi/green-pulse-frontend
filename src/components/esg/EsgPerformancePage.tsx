@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { fetchQuarterTargets, saveQuarterTargets, type EsgKpi, type EsgPerformance, type EsgTone, type MonthlySaving, type QuarterMilestone } from "../../api/esg";
+import { serverApiUrl } from "../../api/client";
 import { useEsgPerformance } from "../../hooks/useEsgPerformance";
 import { useSimulationClock } from "../../hooks/useSimulationClock";
 import { displayYearMonth, formatYearMonth } from "../../utils/date";
@@ -14,7 +15,14 @@ const toneClass: Record<EsgTone, { text: string; bg: string; shadow: string }> =
   green: { text: "text-process-green", bg: "bg-process-green/10", shadow: "shadow-[0_8px_12px_rgba(16,185,129,0.04)]" },
   amber: { text: "text-[#f59e0b]", bg: "bg-[#f59e0b]/10", shadow: "shadow-[0_8px_12px_rgba(245,158,11,0.04)]" },
 };
-
+function downloadEsgReport() {
+  const link = document.createElement("a");
+  link.href = serverApiUrl("/api/reports/esg.docx");
+  link.download = "esg-report.docx";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 function scaleY(value: number, max: number, height: number) {
   return height - (value / max) * height;
 }
@@ -612,7 +620,10 @@ function EsgPageContent({
         <footer className="flex items-center justify-between pt-2">
           <p className="truncate text-xs text-[#626e8a]">© 2025 Intelligent Process Control Lab. All rights reserved. 본 대시보드의 환경 수치는 탄소배출권(KOC) 공인 계산 가이드라인에 의거하여 작성되었습니다.</p>
           <div className="flex shrink-0 gap-2">
-            <button className="rounded-md bg-[#20273d] px-3 py-1.5 text-[11px] font-bold text-white">이사회 보고서 출력</button>
+            <button
+  className="rounded-md bg-[#20273d] px-3 py-1.5 text-[11px] font-bold text-white"
+  onClick={downloadEsgReport}
+>이사회 보고서 출력</button>
             <button className="rounded-md bg-process-green px-3 py-1.5 text-[11px] font-bold text-black">투자자 IR 공유</button>
           </div>
         </footer>

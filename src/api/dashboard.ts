@@ -101,3 +101,7 @@ function lossSeverity(lossKwh: number, maxLossKwh: number): ReactorLoss["status"
   if (ratio >= 0.5) return "warning";
   return "caution";
 }
+
+export function fetchEpisodeSensorTrend(episodeId: number) {
+  return fetchServerJson<SensorTrendResponse>(`/api/episodes/${episodeId}/sensor-trend`);
+}
