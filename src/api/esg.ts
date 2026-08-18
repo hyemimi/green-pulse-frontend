@@ -35,6 +35,8 @@ export type QuarterMilestone = {
 
 export type EsgPerformance = {
   period: string;
+  selectedMonth: string;
+  availableMonths: string[];
   status: string;
   subtitle: string;
   kpis: EsgKpi[];
@@ -75,9 +77,11 @@ const carbonIcon = "https://www.figma.com/api/mcp/asset/fb2b2d86-c358-4337-818e-
 const costIcon = "https://www.figma.com/api/mcp/asset/c31050bc-8575-4ab3-ac4a-3d65ea1c6d3f.svg";
 const detectionIcon = "https://www.figma.com/api/mcp/asset/cbe62bd5-1c41-419c-9625-20472b7b66ff.svg";
 
-export async function fetchEsgPerformance(): Promise<EsgPerformance> {
+export async function fetchEsgPerformance(selectedMonth: string): Promise<EsgPerformance> {
+  const { from, to } = monthRange(selectedMonth);
+  const summaryPath = `/api/esg/summary?holdMin=0&from=${from}&to=${to}`;
   const [summary, monthly] = await Promise.all([
-    fetchServerJson<BackendEsgSummary>("/api/esg/summary?holdMin=0"),
+    fetchServerJson<BackendEsgSummary>(summaryPath),
     fetchServerJson<BackendMonthlySaving[]>("/api/esg/monthly?holdMin=0"),
   ]);
 
@@ -89,7 +93,9 @@ export async function fetchEsgPerformance(): Promise<EsgPerformance> {
   const annualGoalKwh = getAnnualGoal(summary);
 
   return {
-    period: formatPeriod(monthly, summary.period),
+    period: selectedMonth.replace("-", "."),
+    selectedMonth,
+    availableMonths: monthly.map((row) => row.month.slice(0, 7)),
     status: "LIVE DATA CONNECTED",
     subtitle: "AI 조기 탐지 기반 화학공정 ESG 절감 성과",
     kpis: [
@@ -195,17 +201,14 @@ function formatMonth(value: string) {
   return `${date.getUTCMonth() + 1}월`;
 }
 
-function formatPeriod(monthly: BackendMonthlySaving[], period: BackendEsgSummary["period"]) {
-  if (period.from || period.to) {
-    return `${period.from ?? "시작"} - ${period.to ?? "현재"}`;
-  }
-  if (monthly.length === 0) {
-    return "조회 기간 없음";
-  }
+function monthRange(selectedMonth: string) {
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-  const first = new Date(monthly[0].month);
-  const last = new Date(monthly[monthly.length - 1].month);
-  return `${first.getUTCFullYear()}.${String(first.getUTCMonth() + 1).padStart(2, "0")} - ${last.getUTCFullYear()}.${String(last.getUTCMonth() + 1).padStart(2, "0")}`;
+  return {
+    from: `${selectedMonth}-01`,
+    to: `${selectedMonth}-${String(lastDay).padStart(2, "0")}`,
+  };
 }
 
 function formatNumber(value: number | null, maximumFractionDigits: number) {

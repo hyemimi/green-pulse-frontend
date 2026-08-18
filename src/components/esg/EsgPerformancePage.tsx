@@ -1,6 +1,8 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { EsgKpi, EsgPerformance, EsgTone, MonthlySaving, QuarterMilestone } from "../../api/esg";
 import { useEsgPerformance } from "../../hooks/useEsgPerformance";
+import { useSimulationClock } from "../../hooks/useSimulationClock";
+import { displayYearMonth, formatYearMonth } from "../../utils/date";
 import { SegmentedNavigation } from "../common/SegmentedNavigation";
 
 const leafIcon = "https://www.figma.com/api/mcp/asset/79f16789-ef02-40b0-80b9-0ed803465846.svg";
@@ -32,7 +34,17 @@ function pointX(index: number, count: number, width: number) {
   return count <= 1 ? width / 2 : (index / (count - 1)) * width;
 }
 
-function EsgHeader({ data }: { data: EsgPerformance }) {
+function EsgHeader({
+  data,
+  selectedMonth,
+  onMonthChange,
+}: {
+  data: EsgPerformance;
+  selectedMonth: string;
+  onMonthChange: (month: string) => void;
+}) {
+  const monthOptions = [...new Set([selectedMonth, ...data.availableMonths])].sort();
+
   return (
     <header className="flex w-full items-center justify-between gap-8">
       <div className="flex min-w-0 flex-col gap-1.5">
@@ -49,10 +61,21 @@ function EsgHeader({ data }: { data: EsgPerformance }) {
       </div>
       <div className="flex shrink-0 items-center gap-4">
         <SegmentedNavigation active="esg" tone="green" />
-        <div className="flex items-center gap-2 rounded-lg border border-[#20273d] bg-[#121626] px-3 py-1.5">
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#20273d] bg-[#121626] px-3 py-1.5">
           <img alt="" className="size-4" src={calendarIcon} />
-          <p className="whitespace-nowrap text-[13px] font-semibold text-white">{data.period}</p>
-        </div>
+          <select
+            aria-label="ESG 조회 월"
+            className="cursor-pointer bg-transparent text-[13px] font-semibold text-white outline-none"
+            value={selectedMonth}
+            onChange={(event) => onMonthChange(event.target.value)}
+          >
+            {monthOptions.map((month) => (
+              <option key={month} className="bg-[#121626] text-white" value={month}>
+                {displayYearMonth(month)}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="rounded-md border border-process-green bg-process-green/10 px-3 py-1.5 text-xs font-bold text-process-green">{data.status}</div>
       </div>
     </header>
@@ -228,11 +251,19 @@ function QuarterlyMilestones({ quarters, target }: { quarters: QuarterMilestone[
   );
 }
 
-function EsgPageContent({ data }: { data: EsgPerformance }) {
+function EsgPageContent({
+  data,
+  selectedMonth,
+  onMonthChange,
+}: {
+  data: EsgPerformance;
+  selectedMonth: string;
+  onMonthChange: (month: string) => void;
+}) {
   return (
     <main className="min-h-screen min-w-[1180px] bg-[#090b1a] p-8 text-white">
       <div className="flex min-h-[calc(100vh-64px)] flex-col gap-5">
-        <EsgHeader data={data} />
+        <EsgHeader data={data} selectedMonth={selectedMonth} onMonthChange={onMonthChange} />
         <section className="grid grid-cols-4 gap-4">
           {data.kpis.map((kpi) => <EsgKpiCard key={kpi.id} kpi={kpi} />)}
         </section>
@@ -256,7 +287,14 @@ function EsgPageContent({ data }: { data: EsgPerformance }) {
 }
 
 export function EsgPerformancePage() {
-  const { data, error, isLoading, refetch } = useEsgPerformance();
+  const simulationTime = useSimulationClock();
+  const simulationMonth = formatYearMonth(simulationTime);
+  const [selectedMonth, setSelectedMonth] = useState(simulationMonth);
+  const { data, error, isLoading, refetch } = useEsgPerformance(selectedMonth);
+
+  useEffect(() => {
+    setSelectedMonth(simulationMonth);
+  }, [simulationMonth]);
 
   if (isLoading) {
     return <main className="min-h-screen bg-[#090b1a] p-8 text-sm text-[#8f9bb3]">ESG 실데이터를 불러오는 중...</main>;
@@ -272,5 +310,11 @@ export function EsgPerformancePage() {
     );
   }
 
-  return <EsgPageContent data={data} />;
+  return (
+    <EsgPageContent
+      data={data}
+      selectedMonth={selectedMonth}
+      onMonthChange={setSelectedMonth}
+    />
+  );
 }

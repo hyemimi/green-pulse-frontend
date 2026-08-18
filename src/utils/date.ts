@@ -25,6 +25,22 @@ export function randomFebruary2024Date() {
   return new Date(Date.UTC(2024, 1, day, hour - 9, minute, second));
 }
 
+export function formatYearMonth(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    timeZone: "Asia/Seoul",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "2024";
+  const month = parts.find((part) => part.type === "month")?.value ?? "02";
+
+  return `${year}-${month}`;
+}
+
+export function displayYearMonth(value: string) {
+  return value.replace("-", ".");
+}
+
 function randomInteger(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
