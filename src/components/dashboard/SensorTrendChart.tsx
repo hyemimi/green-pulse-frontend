@@ -19,6 +19,7 @@ const CHART_HEIGHT = 380;
 const PLOT_HEIGHT = 286;
 const PLOT_OFFSET_Y = 48;
 const MAX_X_TICKS = 6;
+const LANE_GAP = 8;
 
 const SENSOR_SERIES: SensorSeriesConfig[] = [
   { key: "temp", label: "온도", unit: "°C", color: "#00f0ff", selector: (point) => point.reactorTemp },
@@ -27,6 +28,8 @@ const SENSOR_SERIES: SensorSeriesConfig[] = [
   { key: "vibration", label: "진동", unit: "RMS", color: "#fbbf24", selector: (point) => point.vibrationRms },
   { key: "current", label: "전류", unit: "A", color: "#ef4444", selector: (point) => point.motorCurrent },
 ];
+
+const LANE_HEIGHT = (PLOT_HEIGHT - (SENSOR_SERIES.length - 1) * LANE_GAP) / SENSOR_SERIES.length;
 
 function fillMissingValues(points: SensorPoint[], selector: (point: SensorPoint) => number | null) {
   return points.map((point, index) => {
@@ -85,13 +88,17 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
       points.findIndex((point) => point.timestamp === trend?.detectedAt),
     );
     const step = points.length > 1 ? CHART_WIDTH / (points.length - 1) : 40;
-    const series = SENSOR_SERIES.map((sensor) => {
+
+    // 센서마다 자기만의 세로 구역(lane)을 갖게 해서, 겹치지 않고 각자 스케일로 그려지게 함
+    const series = SENSOR_SERIES.map((sensor, index) => {
       const values = fillMissingValues(points, sensor.selector);
+      const laneOffset = PLOT_OFFSET_Y + index * (LANE_HEIGHT + LANE_GAP);
 
       return {
         ...sensor,
-        path: buildLinePath(values, CHART_WIDTH, PLOT_HEIGHT, { paddingRatio: 0.08 }),
-        chartPoints: buildPoints(values, CHART_WIDTH, PLOT_HEIGHT, PLOT_OFFSET_Y, { paddingRatio: 0.08 }),
+        laneOffset,
+        path: buildLinePath(values, CHART_WIDTH, LANE_HEIGHT, { paddingRatio: 0.18 }),
+        chartPoints: buildPoints(values, CHART_WIDTH, LANE_HEIGHT, laneOffset, { paddingRatio: 0.18 }),
       };
     });
 
@@ -145,13 +152,35 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
       </div>
 
       <svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} className="h-[380px] w-full max-w-[440px] overflow-visible">
-        {[0, 72, 143, 215, 286].map((y) => (
-          <line key={y} x1="0" x2={CHART_WIDTH} y1={y + PLOT_OFFSET_Y} y2={y + PLOT_OFFSET_Y} stroke="#2e3148" strokeWidth="1" opacity="0.82" />
+        {/* 레인 구분선 */}
+        {chart.series.slice(0, -1).map((series) => (
+          <line
+            key={`sep-${series.key}`}
+            x1="0"
+            x2={CHART_WIDTH}
+            y1={series.laneOffset + LANE_HEIGHT + LANE_GAP / 2}
+            y2={series.laneOffset + LANE_HEIGHT + LANE_GAP / 2}
+            stroke="#2e3148"
+            strokeWidth="1"
+            opacity="0.6"
+          />
         ))}
+
+        {/* 이상 전조 감지 구간 - 5개 레인 전체를 관통하게 그대로 유지 */}
         <rect x={chart.anomalyX} y={PLOT_OFFSET_Y} width={chart.anomalyWidth} height={PLOT_HEIGHT} rx="6" fill="rgba(249,115,22,0.10)" stroke="#f97316" />
+
+        {/* 레인별 라벨 */}
         {chart.series.map((series) => (
-          <path key={series.key} d={series.path} transform={`translate(0 ${PLOT_OFFSET_Y})`} fill="none" stroke={series.color} strokeWidth={series.key === "temp" || series.key === "pressure" ? 2.3 : 1.9} opacity={series.key === "temp" || series.key === "pressure" ? 1 : 0.76} />
+          <text key={`label-${series.key}`} x="4" y={series.laneOffset + 10} fontSize="10" fontWeight="700" fill={series.color}>
+            {series.label} ({series.unit})
+          </text>
         ))}
+
+        {/* 센서별 선 - 이제 자기 레인 안에서만 그려짐 */}
+        {chart.series.map((series) => (
+          <path key={series.key} d={series.path} transform={`translate(0 ${series.laneOffset})`} fill="none" stroke={series.color} strokeWidth="2" />
+        ))}
+
         {chart.tickIndexes.map((index) => (
           <g key={chart.points[index].timestamp}>
             <line x1={index * chart.step} x2={index * chart.step} y1={PLOT_OFFSET_Y + PLOT_HEIGHT} y2={PLOT_OFFSET_Y + PLOT_HEIGHT + 6} stroke="#8f96a8" opacity="0.75" />
@@ -160,7 +189,10 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
             </text>
           </g>
         ))}
+
+        {/* 커서 라인 - 5개 레인을 관통해서, 같은 시점의 5개 센서 값을 한번에 비교 가능 */}
         <line x1={chart.activeX} x2={chart.activeX} y1={PLOT_OFFSET_Y} y2={PLOT_OFFSET_Y + PLOT_HEIGHT} stroke="#8f96a8" strokeDasharray="4 6" opacity="0.65" />
+
         {chart.points.map((point, index) => (
           <g key={point.timestamp}>
             {chart.series.map((series) => (
@@ -168,13 +200,14 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
                 key={series.key}
                 cx={series.chartPoints[index].x}
                 cy={series.chartPoints[index].y}
-                r={index === chart.activeIndex ? 3.6 : series.key === "temp" || series.key === "pressure" ? 2.6 : 2.1}
+                r={index === chart.activeIndex ? 3.4 : 2}
                 fill={series.color}
-                opacity={series.key === "temp" || series.key === "pressure" || index === chart.activeIndex ? 1 : 0.72}
+                opacity={index === chart.activeIndex ? 1 : 0.72}
               />
             ))}
           </g>
         ))}
+
         <foreignObject x={Math.min(chart.anomalyX + 16, CHART_WIDTH - 112)} y="14" width="112" height="26">
           <div className="rounded-full border border-process-orange bg-process-orange/10 px-2 py-1 text-center text-[11px] font-bold text-process-orange">
             이상 전조 감지 구간

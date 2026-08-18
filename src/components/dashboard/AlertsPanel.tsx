@@ -44,7 +44,11 @@ function toAlertItem(detection: Detection): AlertItem {
   };
 }
 
-function AlertsPanelComponent() {
+type AlertsPanelProps = {
+  onSelectEpisode: (episodeId: number, reactorId: string) => void;
+};
+
+function AlertsPanelComponent({ onSelectEpisode }: AlertsPanelProps) {
   const { data: detections = [] } = useDetections();
 
   const sortedDetections = [...detections].sort(
@@ -70,7 +74,8 @@ function AlertsPanelComponent() {
           return (
             <article
               key={detection.episode_id}
-              className={`flex min-w-0 items-center gap-3 rounded-lg border p-3 ${style.border} ${style.bg}`}
+              className={`flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border p-3 transition-opacity hover:opacity-80 ${style.border} ${style.bg}`}
+              onClick={() => onSelectEpisode(detection.episode_id, detection.reactor_id)}
             >
               <img
                 alt=""
