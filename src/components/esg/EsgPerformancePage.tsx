@@ -21,11 +21,15 @@ function scaleY(value: number, max: number, height: number) {
 function linePath(values: number[], width: number, height: number, max: number) {
   return values
     .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
+      const x = pointX(index, values.length, width);
       const y = scaleY(value, max, height);
       return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
     .join(" ");
+}
+
+function pointX(index: number, count: number, width: number) {
+  return count <= 1 ? width / 2 : (index / (count - 1)) * width;
 }
 
 function EsgHeader({ data }: { data: EsgPerformance }) {
@@ -84,7 +88,8 @@ function MonthlySavingsChart({ rows }: { rows: MonthlySaving[] }) {
   const chart = useMemo(() => {
     const width = 710;
     const height = 200;
-    const max = 200;
+    const rawMax = Math.max(...rows.flatMap((row) => [row.monthly, row.cumulative]), 1);
+    const max = Math.ceil(rawMax / 10) * 10;
     const monthlyPath = linePath(
       rows.map((row) => row.monthly),
       width,
@@ -98,17 +103,33 @@ function MonthlySavingsChart({ rows }: { rows: MonthlySaving[] }) {
       max,
     );
     const areaPath = `${monthlyPath} L ${width} ${height} L 0 ${height} Z`;
-    const best = rows.reduce((top, row, index) => (row.monthly > top.row.monthly ? { row, index } : top), { row: rows[0], index: 0 });
+    const best = rows.reduce(
+      (top, row, index) => (row.monthly > top.row.monthly ? { row, index } : top),
+      { row: rows[0], index: 0 },
+    );
+    const ticks = [max, max * 0.75, max * 0.5, max * 0.25, 0];
 
-    return { width, height, max, monthlyPath, cumulativePath, areaPath, best };
+    return { width, height, max, monthlyPath, cumulativePath, areaPath, best, ticks };
   }, [rows]);
+
+  if (rows.length === 0) {
+    return (
+      <section className="flex h-[520px] min-w-0 items-center justify-center rounded-card border border-[#20273d] bg-[#121626] p-6">
+        <p className="text-sm font-semibold text-[#8f9bb3]">표시할 월별 절감 데이터가 없습니다.</p>
+      </section>
+    );
+  }
+
+  const periodLabel = `${rows[0].month} ~ ${rows[rows.length - 1].month}`;
+  const bestX = pointX(chart.best.index, rows.length, chart.width);
+  const bestY = scaleY(chart.best.row.monthly, chart.max, chart.height);
 
   return (
     <section className="flex h-[520px] min-w-0 flex-col gap-5 rounded-card border border-[#20273d] bg-[#121626] p-6">
       <div className="flex items-center justify-between gap-6">
         <div className="flex min-w-0 flex-col gap-1">
           <p className="truncate text-base font-bold text-white">월별 에너지 절감 추이 (Monthly Energy Savings)</p>
-          <p className="truncate text-[13px] text-[#8f9bb3]">2025년 1월 ~ 12월 누적 및 단일 절감 현황</p>
+          <p className="truncate text-[13px] text-[#8f9bb3]">{periodLabel} 월별 및 누적 절감 현황 · 단위 kWh</p>
         </div>
         <div className="flex shrink-0 items-center gap-4 text-xs text-[#8f9bb3]">
           <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-process-green" />월간 절감량</span>
@@ -117,12 +138,12 @@ function MonthlySavingsChart({ rows }: { rows: MonthlySaving[] }) {
       </div>
       <div className="flex h-[200px] min-w-0 gap-2">
         <div className="flex h-full w-8 shrink-0 flex-col justify-between text-right text-[11px] text-[#626e8a]">
-          {[200, 150, 100, 50, 0].map((tick) => <p key={tick}>{tick}</p>)}
+          {chart.ticks.map((tick) => <p key={tick}>{tick.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}</p>)}
         </div>
         <svg viewBox={`0 0 ${chart.width} ${chart.height}`} className="h-[200px] min-w-0 flex-1 overflow-visible">
           {[10, 55, 100, 145, 190].map((y) => <line key={y} x1="0" x2={chart.width} y1={y} y2={y} stroke="#20273d" strokeWidth="1" />)}
           {rows.map((row, index) => {
-            const x = (index / (rows.length - 1)) * chart.width;
+            const x = pointX(index, rows.length, chart.width);
             const barHeight = (row.monthly / chart.max) * chart.height;
             return <rect key={row.month} x={x - 10} y={chart.height - barHeight} width="20" height={barHeight} rx="4" fill="url(#energyBar)" opacity="0.42" />;
           })}
@@ -141,9 +162,9 @@ function MonthlySavingsChart({ rows }: { rows: MonthlySaving[] }) {
           </defs>
           <path d={chart.monthlyPath} fill="none" stroke="#10b981" strokeWidth="3" />
           <path d={chart.cumulativePath} fill="none" stroke="#f59e0b" strokeDasharray="3 3" strokeWidth="2" />
-          <circle cx={(chart.best.index / (rows.length - 1)) * chart.width} cy={scaleY(chart.best.row.monthly, chart.max, chart.height)} r="5" fill="#10b981" />
-          <foreignObject x="612" y="-18" width="110" height="26">
-            <div className="rounded border border-[#20273d] bg-[#090b1a] px-2 py-1 text-[11px] font-bold text-white">최고 성과: 185 MWh</div>
+          <circle cx={bestX} cy={bestY} r="5" fill="#10b981" />
+          <foreignObject x={Math.min(Math.max(bestX - 60, 0), chart.width - 130)} y={Math.max(bestY - 34, 0)} width="130" height="28">
+            <div className="rounded border border-[#20273d] bg-[#090b1a] px-2 py-1 text-[11px] font-bold text-white">최고: {chart.best.row.monthly.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} kWh</div>
           </foreignObject>
         </svg>
       </div>
@@ -178,7 +199,7 @@ function EcoImpactCard({ data }: { data: EsgPerformance }) {
 function QuarterlyMilestones({ quarters, target }: { quarters: QuarterMilestone[]; target: EsgPerformance["target"] }) {
   return (
     <section className="flex flex-col gap-3.5 rounded-card border border-[#20273d] bg-[#121626] p-5">
-      <p className="text-[15px] font-bold text-white">분기별 목표 달성률 (Quarterly Milestones)</p>
+      <p className="text-[15px] font-bold text-white">분기별 에너지 절감 현황 (Quarterly Savings)</p>
       <div className="flex flex-col gap-2.5">
         {quarters.map((quarter) => {
           const isAmber = quarter.tone === "amber";
@@ -197,7 +218,11 @@ function QuarterlyMilestones({ quarters, target }: { quarters: QuarterMilestone[
       </div>
       <div className="flex items-center gap-2.5 rounded-lg border border-process-cyan/20 bg-process-cyan/5 p-3">
         <img alt="" className="size-4" src={infoIcon} />
-        <p className="min-w-0 text-xs font-semibold text-process-cyan">연간 누적 초과 달성 (목표: {target.goal.toLocaleString()} MWh → 실적: {target.actual.toLocaleString()} MWh)</p>
+        <p className="min-w-0 text-xs font-semibold text-process-cyan">
+          {target.goal > 0
+            ? `연간 목표 ${target.goal.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} ${target.unit} · 현재 ${target.actual.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} ${target.unit}`
+            : `현재 누적 ${target.actual.toLocaleString("ko-KR", { maximumFractionDigits: 2 })} ${target.unit} · 연간 목표는 아직 설정되지 않았습니다.`}
+        </p>
       </div>
     </section>
   );
@@ -231,10 +256,20 @@ function EsgPageContent({ data }: { data: EsgPerformance }) {
 }
 
 export function EsgPerformancePage() {
-  const { data } = useEsgPerformance();
+  const { data, error, isLoading, refetch } = useEsgPerformance();
 
-  if (!data) {
-    return <main className="min-h-screen bg-[#090b1a] p-8 text-sm text-[#8f9bb3]">ESG 데이터를 불러오는 중</main>;
+  if (isLoading) {
+    return <main className="min-h-screen bg-[#090b1a] p-8 text-sm text-[#8f9bb3]">ESG 실데이터를 불러오는 중...</main>;
+  }
+
+  if (error || !data) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#090b1a] p-8 text-white">
+        <p className="text-lg font-bold">ESG 데이터를 불러오지 못했습니다.</p>
+        <p className="text-sm text-[#8f9bb3]">백엔드 서버 주소와 실행 상태를 확인해 주세요.</p>
+        <button className="rounded-md bg-process-green px-4 py-2 text-sm font-bold text-black" onClick={() => void refetch()}>다시 시도</button>
+      </main>
+    );
   }
 
   return <EsgPageContent data={data} />;

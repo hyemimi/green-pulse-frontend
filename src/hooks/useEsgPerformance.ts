@@ -5,5 +5,7 @@ export function useEsgPerformance() {
   return useQuery({
     queryKey: ["esg-performance"],
     queryFn: fetchEsgPerformance,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 }
