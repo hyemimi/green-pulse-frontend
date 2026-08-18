@@ -112,8 +112,8 @@ function SensorTrendChartComponent({ trend, dataUpdatedAt }: SensorTrendChartPro
       anomalyAnimationRef.current = null;
     }
 
-    // 사용자 요청: 데모 시연을 위해 확장 속도를 60배 빠르게 조정 (1초에 1분만큼 확장)
-    const DEMO_SPEED_MULTIPLIER = 10;
+    // 사용자 요청: 데모 속도를 30배로 빠르게 조정 (1분에 해당하는 애니메이션이 2초 동안 재생)
+    const DEMO_SPEED_MULTIPLIER = 30;
     const elapsedMinutes = anomalyAnimationRef.current
       ? (Math.max(currentTimeMs - anomalyAnimationRef.current.startedAt, 0) / 60_000) * DEMO_SPEED_MULTIPLIER
       : 0;
