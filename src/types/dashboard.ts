@@ -41,6 +41,7 @@ export type SensorTrendResponse = {
   to: string;
   faultOnset: string | null;
   detectedAt: string | null;
+  anomalyDurationMin?: number;
   axisLabels: string[];
   points: SensorPoint[];
 };

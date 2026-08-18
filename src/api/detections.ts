@@ -1,5 +1,6 @@
 import { serverApiUrl } from "./client";
 import { DEMO_DATE } from "../constants/demoTimeline";
+import { shiftIsoTimestamp } from "../utils/date";
 
 export type Detection = {
   episode_id: number;
@@ -34,7 +35,7 @@ export async function fetchDetections(): Promise<Detection[]> {
 
   const rows: BackendDetection[] = await response.json();
 
-  return rows
+  const detections = rows
     .map((row) => ({
       episode_id: row.episodeId,
       reactor_id: row.reactorId,
@@ -47,4 +48,15 @@ export async function fetchDetections(): Promise<Detection[]> {
       score: row.score,
     }))
     .filter((row) => row.fault_onset.slice(0, 10) === DEMO_DATE);
+
+  const latestDetectionTime = Math.max(
+    ...detections.map((detection) => new Date(detection.detected_at).getTime()),
+  );
+  const offsetMs = Number.isFinite(latestDetectionTime) ? Date.now() - latestDetectionTime : 0;
+
+  return detections.map((detection) => ({
+    ...detection,
+    fault_onset: shiftIsoTimestamp(detection.fault_onset, offsetMs),
+    detected_at: shiftIsoTimestamp(detection.detected_at, offsetMs),
+  }));
 }

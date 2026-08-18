@@ -15,8 +15,8 @@ function ProcessDashboardPage() {
   const [selectedReactorId, setSelectedReactorId] = useState(DEMO_REACTOR_ID);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<number | null>(null);
   const [playbackMinute, setPlaybackMinute] = useState(0);
-  const { data: detections = [], dataUpdatedAt } = useDetections();
-  const { data: sensorTrend } = useSensorTrends(selectedReactorId, selectedEpisodeId);
+  const { data: detections = [] } = useDetections();
+  const { data: sensorTrend, dataUpdatedAt: sensorDataUpdatedAt } = useSensorTrends(selectedReactorId, selectedEpisodeId);
   const handleSelectReactor = (reactorId: string) => {
     setSelectedReactorId(reactorId);
     setSelectedEpisodeId(null);
@@ -53,7 +53,7 @@ function ProcessDashboardPage() {
         <section className="grid flex-1 grid-cols-[minmax(560px,1fr)_420px_380px] gap-4 overflow-hidden">
           <SensorTrendPanel
   summary={summary}
-  dataUpdatedAt={dataUpdatedAt}
+  dataUpdatedAt={sensorDataUpdatedAt}
   trend={sensorTrend}
   selectedReactorId={selectedReactorId}
   onSelectReactor={setSelectedReactorId}
