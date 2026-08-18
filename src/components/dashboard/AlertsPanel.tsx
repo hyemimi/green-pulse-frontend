@@ -1,7 +1,40 @@
 import { memo } from "react";
-import { alerts, severityStyle } from "../../constants/dashboardData";
+import { alertOctagon, alertTriangle, checkCircle, severityStyle } from "../../constants/dashboardData";
+import { useDetections } from "../../hooks/useDetections";
+import type { Detection } from "../../api/detections";
+import type { AlertItem, Severity } from "../../types/dashboard";
+
+function severityFor(score: number): Severity {
+  if (score >= 0.9) return "critical";
+  if (score >= 0.7) return "warning";
+  return "caution";
+}
+
+function iconFor(severity: Severity) {
+  if (severity === "critical") return alertOctagon;
+  if (severity === "warning") return alertTriangle;
+  return checkCircle;
+}
+
+function toAlertItem(detection: Detection): AlertItem {
+  const severity = severityFor(detection.score);
+  const time = new Date(detection.detected_at).toISOString().slice(11, 16);
+
+  return {
+    severity,
+    icon: iconFor(severity),
+    title: `Reactor ${detection.reactor_id} | ${detection.fault_type} 감지 | ${detection.specialist}`,
+    meta: `${time} | score ${Math.round(detection.score * 100)}%`,
+  };
+}
 
 function AlertsPanelComponent() {
+  const { data: detections = [] } = useDetections();
+
+  const alertItems = [...detections]
+    .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
+    .map(toAlertItem);
+
   return (
     <section className="panel flex h-full w-[380px] shrink-0 flex-col gap-4 overflow-hidden p-5">
       <div className="flex min-w-0 items-center justify-between gap-3">
@@ -9,7 +42,7 @@ function AlertsPanelComponent() {
         <span className="shrink-0 rounded bg-process-red px-1.5 py-0.5 text-[11px] font-bold text-black">LIVE</span>
       </div>
       <div className="flex min-w-0 flex-col gap-3 overflow-hidden">
-        {alerts.map((alert) => {
+        {alertItems.map((alert) => {
           const style = severityStyle[alert.severity];
 
           return (
