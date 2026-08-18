@@ -42,7 +42,7 @@ function KpiRowComponent({ summary, reactorLosses, playbackMinute, maxPlaybackMi
         subLabel={`공정 재생 ${playbackMinute}/${maxPlaybackMinute}분`}
         value={`${powerLoss.avoidableLoss.toFixed(2)} kWh`}
         valueClassName="text-process-cyan"
-        badge="회피 가능"
+        badge="절감 가능"
       />
     </section>
   );
