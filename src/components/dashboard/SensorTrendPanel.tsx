@@ -52,7 +52,7 @@ function SensorTrendPanelComponent({ summary, dataUpdatedAt, trend, selectedReac
           </div>
         </div>
       </div>
-      <SensorTrendChart trend={trend} />
+      <SensorTrendChart trend={trend} dataUpdatedAt={dataUpdatedAt} />
     </section>
   );
 }

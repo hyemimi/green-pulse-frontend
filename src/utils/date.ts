@@ -35,7 +35,12 @@ export function formatTimeInSeoul(value: string | Date) {
   return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
     timeZone: "Asia/Seoul",
   }).format(new Date(value));
+}
+
+export function shiftIsoTimestamp(value: string, offsetMs: number) {
+  return new Date(new Date(value).getTime() + offsetMs).toISOString();
 }

@@ -1,9 +1,10 @@
-import { memo, useMemo, useState, type MouseEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { SensorPoint, SensorTrendResponse } from "../../types/dashboard";
 import { buildLinePath, buildPoints } from "../../utils/chart";
 
 type SensorTrendChartProps = {
   trend?: SensorTrendResponse;
+  dataUpdatedAt: number;
 };
 
 type SensorSeriesConfig = {
@@ -18,7 +19,7 @@ const CHART_WIDTH = 440;
 const CHART_HEIGHT = 380;
 const PLOT_HEIGHT = 286;
 const PLOT_OFFSET_Y = 48;
-const MAX_X_TICKS = 6;
+const X_TICK_INTERVAL_MINUTES = 10;
 const LANE_GAP = 8;
 
 const SENSOR_SERIES: SensorSeriesConfig[] = [
@@ -59,18 +60,32 @@ function formatSensorValue(value: number | null, unit: string) {
 }
 
 function getTickIndexes(length: number) {
-  if (length <= MAX_X_TICKS) {
-    return Array.from({ length }, (_, index) => index);
+  if (length === 0) {
+    return [];
   }
 
   const last = length - 1;
-  return Array.from({ length: MAX_X_TICKS }, (_, index) => Math.round((index / (MAX_X_TICKS - 1)) * last)).filter(
-    (value, index, values) => values.indexOf(value) === index,
+  const indexes = Array.from(
+    { length: Math.floor(last / X_TICK_INTERVAL_MINUTES) + 1 },
+    (_, index) => index * X_TICK_INTERVAL_MINUTES,
   );
+
+  if (indexes[indexes.length - 1] !== last) {
+    indexes.push(last);
+  }
+
+  return indexes;
 }
 
-function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
+function SensorTrendChartComponent({ trend, dataUpdatedAt }: SensorTrendChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [currentTimeMs, setCurrentTimeMs] = useState(Date.now);
+  const anomalyAnimationRef = useRef<{ anchorX: number; startedAt: number } | null>(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTimeMs(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const chart = useMemo(() => {
     const points = trend?.points ?? [];
@@ -82,10 +97,34 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
       : -1;
     const hasAnomaly = onsetPointIndex >= 0 && detectedPointIndex >= 0;
     const fallbackIndex = detectedPointIndex >= 0 ? detectedPointIndex : Math.max(points.length - 1, 0);
-    const activeIndex = Math.min(selectedIndex ?? fallbackIndex, Math.max(points.length - 1, 0));
+    const liveIndex = points.length > 0 && dataUpdatedAt > 0
+      ? points.length - 1
+      : fallbackIndex;
+    const activeIndex = Math.min(selectedIndex ?? liveIndex, Math.max(points.length - 1, 0));
     const onsetIndex = Math.max(onsetPointIndex, 0);
     const detectedIndex = Math.max(detectedPointIndex, onsetIndex + 1);
     const step = points.length > 1 ? CHART_WIDTH / (points.length - 1) : 40;
+    const calculatedAnomalyX = Math.max(0, onsetIndex * step - 8);
+
+    if (hasAnomaly && anomalyAnimationRef.current === null) {
+      anomalyAnimationRef.current = { anchorX: calculatedAnomalyX, startedAt: currentTimeMs };
+    } else if (!hasAnomaly) {
+      anomalyAnimationRef.current = null;
+    }
+
+    // 사용자 요청: 데모 시연을 위해 확장 속도를 60배 빠르게 조정 (1초에 1분만큼 확장)
+    const DEMO_SPEED_MULTIPLIER = 10;
+    const elapsedMinutes = anomalyAnimationRef.current
+      ? (Math.max(currentTimeMs - anomalyAnimationRef.current.startedAt, 0) / 60_000) * DEMO_SPEED_MULTIPLIER
+      : 0;
+    const anomalyDurationMin = Math.max(trend?.anomalyDurationMin ?? detectedIndex - onsetIndex, 1);
+    const visibleAnomalyMinutes = Math.min(elapsedMinutes, anomalyDurationMin * DEMO_SPEED_MULTIPLIER);
+
+    // 사용자 요청: 주황색 박스의 오른쪽 선분은 차트 끝에 고정하고, 왼쪽으로 면적이 확장되도록 수정합니다.
+    const currentWidth = Math.max(step, visibleAnomalyMinutes * step);
+    const rightEdgeX = CHART_WIDTH; // 차트의 오른쪽 끝
+    const anomalyX = Math.max(calculatedAnomalyX, rightEdgeX - currentWidth);
+    const anomalyWidth = rightEdgeX - anomalyX;
 
     // 센서마다 자기만의 세로 구역(lane)을 갖게 해서, 겹치지 않고 각자 스케일로 그려지게 함
     const series = SENSOR_SERIES.map((sensor, index) => {
@@ -107,12 +146,12 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
       tickIndexes: getTickIndexes(points.length),
       series,
       step,
-      hasAnomaly,
+      hasAnomaly: hasAnomaly && anomalyWidth > 0,
       activeX: activeIndex * step,
-      anomalyX: Math.max(0, onsetIndex * step - 8),
-      anomalyWidth: Math.min(170, Math.max(86, (detectedIndex - onsetIndex + 2) * step)),
+      anomalyX,
+      anomalyWidth,
     };
-  }, [selectedIndex, trend]);
+  }, [currentTimeMs, dataUpdatedAt, selectedIndex, trend]);
 
   const handlePointerMove = (event: MouseEvent<SVGRectElement>) => {
     if (chart.points.length <= 1) {
@@ -217,6 +256,7 @@ function SensorTrendChartComponent({ trend }: SensorTrendChartProps) {
           fill="transparent"
           className="cursor-crosshair"
           onMouseMove={handlePointerMove}
+          onMouseLeave={() => setSelectedIndex(null)}
           onClick={handlePointerMove}
         />
       </svg>
