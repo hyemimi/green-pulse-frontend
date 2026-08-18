@@ -3,11 +3,21 @@ export type Severity = "critical" | "warning" | "caution" | "normal";
 export type ReactorLoss = {
   id: string;
   label: string;
-  loss: number;
-  averagePowerKw: number;
-  averageEfficiencyLossPct: number;
-  faultCount: number;
+  episodeCount: number;
+  unmitigatedLossKwh: number;
+  actualLossUntilDetectionKwh: number;
+  avoidableLossKwh: number;
+  savingRatePct: number;
   status: Severity;
+};
+
+export type ReactorLossResponse = {
+  playbackMinute: number;
+  maxPlaybackMinute: number;
+  isPlaybackComplete: boolean;
+  totalUnmitigatedLossKwh: number;
+  totalAvoidableLossKwh: number;
+  reactors: ReactorLoss[];
 };
 
 export type SensorPoint = {
