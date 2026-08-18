@@ -14,3 +14,17 @@ export function formatClock(date = new Date()) {
     .replace(".", ".")
     .concat(" GMT+9");
 }
+
+export function randomFebruary2024Date() {
+  const day = randomInteger(1, 29);
+  const hour = randomInteger(0, 23);
+  const minute = randomInteger(0, 59);
+  const second = randomInteger(0, 59);
+
+  // UTC에 9시간을 빼서 저장하면 어느 환경에서 실행해도 서울 시간으로 같은 값이 표시됩니다.
+  return new Date(Date.UTC(2024, 1, day, hour - 9, minute, second));
+}
+
+function randomInteger(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
