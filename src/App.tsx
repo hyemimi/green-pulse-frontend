@@ -9,9 +9,10 @@ import { useDashboardSummary } from "./hooks/useDashboardSummary";
 import { useDetections } from "./hooks/useDetections";
 import { useReactorPowerLoss } from "./hooks/useReactorPowerLoss";
 import { useSensorTrends } from "./hooks/useSensorTrends";
+import { DEMO_REACTOR_ID } from "./constants/demoTimeline";
 
 function ProcessDashboardPage() {
-  const [selectedReactorId, setSelectedReactorId] = useState("A_R2");
+  const [selectedReactorId, setSelectedReactorId] = useState(DEMO_REACTOR_ID);
   const [playbackMinute, setPlaybackMinute] = useState(0);
   const { data: detections = [], dataUpdatedAt } = useDetections();
   const { data: sensorTrend } = useSensorTrends(selectedReactorId);

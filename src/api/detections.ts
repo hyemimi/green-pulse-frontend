@@ -1,4 +1,5 @@
 import { serverApiUrl } from "./client";
+import { DEMO_DATE } from "../constants/demoTimeline";
 
 export type Detection = {
   episode_id: number;
@@ -33,15 +34,17 @@ export async function fetchDetections(): Promise<Detection[]> {
 
   const rows: BackendDetection[] = await response.json();
 
-  return rows.map((row) => ({
-    episode_id: row.episodeId,
-    reactor_id: row.reactorId,
-    fault_type: row.faultType,
-    fault_onset: row.faultOnset,
-    detected_at: row.detectedAt,
-    delay_min: row.delayMin,
-    predicted_fault: row.predictedFault,
-    specialist: row.specialist,
-    score: row.score,
-  }));
+  return rows
+    .map((row) => ({
+      episode_id: row.episodeId,
+      reactor_id: row.reactorId,
+      fault_type: row.faultType,
+      fault_onset: row.faultOnset,
+      detected_at: row.detectedAt,
+      delay_min: row.delayMin,
+      predicted_fault: row.predictedFault,
+      specialist: row.specialist,
+      score: row.score,
+    }))
+    .filter((row) => row.fault_onset.slice(0, 10) === DEMO_DATE);
 }

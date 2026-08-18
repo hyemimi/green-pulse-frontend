@@ -1,4 +1,12 @@
 import type { ReactorLoss, ReactorLossResponse, SensorTrendResponse } from "../types/dashboard";
+import {
+  DEMO_DATE,
+  DEMO_EPISODE_ID,
+  DEMO_REACTOR_ID,
+  DEMO_SENSOR_FROM_ISO,
+  DEMO_SENSOR_TO_ISO,
+} from "../constants/demoTimeline";
+import { formatTimeInSeoul } from "../utils/date";
 import { fetchServerJson } from "./client";
 
 type BackendReactorLoss = Omit<ReactorLoss, "id" | "label" | "status"> & {
@@ -6,9 +14,61 @@ type BackendReactorLoss = Omit<ReactorLoss, "id" | "label" | "status"> & {
 };
 
 export function fetchSensorTrends(reactorId: string) {
-  return fetchServerJson<SensorTrendResponse>(
-    `/api/reactors/${reactorId}/sensor-trend`,
-  );
+  if (reactorId === DEMO_REACTOR_ID) {
+    return fetchServerJson<SensorTrendResponse>(
+      `/api/episodes/${DEMO_EPISODE_ID}/sensor-trend?holdMin=0&bufferMin=15`,
+    ).then(normalizeTrendTimes);
+  }
+
+  return fetchServerJson<BackendReading[]>(
+    `/api/reactors/${reactorId}/readings?from=${DEMO_SENSOR_FROM_ISO}&to=${DEMO_SENSOR_TO_ISO}&limit=100`,
+  ).then((rows): SensorTrendResponse => ({
+    reactorId,
+    from: DEMO_SENSOR_FROM_ISO,
+    to: DEMO_SENSOR_TO_ISO,
+    faultOnset: null,
+    detectedAt: null,
+    axisLabels: rows.map((row) => formatTimeInSeoul(row.timestamp)),
+    points: rows.map((row) => ({
+      timestamp: row.timestamp,
+      time: formatTimeInSeoul(row.timestamp),
+      reactorTemp: row.reactorTemp,
+      reactorPressure: row.reactorPressure,
+      feedFlowRate: row.feedFlowRate,
+      vibrationRms: row.vibrationRms,
+      motorCurrent: row.motorCurrent,
+      powerConsumptionKw: row.powerConsumptionKw,
+      tempSetpoint: row.tempSetpoint,
+      pressureSetpoint: row.pressureSetpoint,
+      faultType: row.faultType === 0 ? "Normal" : `F${row.faultType}`,
+      efficiencyLossPct: row.efficiencyLossPct,
+    })),
+  }));
+}
+
+type BackendReading = {
+  timestamp: string;
+  reactorTemp: number | null;
+  reactorPressure: number | null;
+  feedFlowRate: number | null;
+  vibrationRms: number | null;
+  motorCurrent: number | null;
+  powerConsumptionKw: number | null;
+  tempSetpoint: number | null;
+  pressureSetpoint: number | null;
+  faultType: number;
+  efficiencyLossPct: number | null;
+};
+
+function normalizeTrendTimes(trend: SensorTrendResponse): SensorTrendResponse {
+  return {
+    ...trend,
+    axisLabels: trend.points.map((point) => formatTimeInSeoul(point.timestamp)),
+    points: trend.points.map((point) => ({
+      ...point,
+      time: formatTimeInSeoul(point.timestamp),
+    })),
+  };
 }
 
 type BackendReactorLossResponse = Omit<ReactorLossResponse, "reactors"> & {
@@ -17,7 +77,7 @@ type BackendReactorLossResponse = Omit<ReactorLossResponse, "reactors"> & {
 
 export function fetchReactorPowerLoss(playbackMinute: number) {
   return fetchServerJson<BackendReactorLossResponse>(
-    `/api/esg/reactor-losses?holdMin=0&playbackMinute=${playbackMinute}`,
+    `/api/esg/reactor-losses?holdMin=0&from=${DEMO_DATE}&to=${DEMO_DATE}&playbackMinute=${playbackMinute}`,
   ).then((rows) => {
     const maxLoss = Math.max(...rows.reactors.map((row) => row.unmitigatedLossKwh), 0);
 

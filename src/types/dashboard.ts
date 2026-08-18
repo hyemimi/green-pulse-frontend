@@ -39,8 +39,8 @@ export type SensorTrendResponse = {
   reactorId: string;
   from: string;
   to: string;
-  faultOnset: string;
-  detectedAt: string;
+  faultOnset: string | null;
+  detectedAt: string | null;
   axisLabels: string[];
   points: SensorPoint[];
 };

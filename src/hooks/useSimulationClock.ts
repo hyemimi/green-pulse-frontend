@@ -1,12 +1,4 @@
 import { useEffect, useState } from "react";
-import { randomFebruary2024Date } from "../utils/date";
-
-const STORAGE_KEY = "green-pulse-simulation-clock";
-
-type SimulationClockAnchor = {
-  simulationStartedAt: number;
-  realStartedAt: number;
-};
 
 export function useSimulationClock() {
   const [simulationTime, setSimulationTime] = useState(currentSimulationTime);
@@ -23,30 +15,16 @@ export function useSimulationClock() {
 }
 
 function currentSimulationTime() {
-  const anchor = getOrCreateAnchor();
-  const elapsed = Date.now() - anchor.realStartedAt;
+  const now = new Date();
+  const timeParts = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Seoul",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    timeParts.find((part) => part.type === type)?.value ?? "00";
 
-  return new Date(anchor.simulationStartedAt + elapsed);
-}
-
-function getOrCreateAnchor(): SimulationClockAnchor {
-  const saved = window.sessionStorage.getItem(STORAGE_KEY);
-
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved) as SimulationClockAnchor;
-      if (Number.isFinite(parsed.simulationStartedAt) && Number.isFinite(parsed.realStartedAt)) {
-        return parsed;
-      }
-    } catch {
-      window.sessionStorage.removeItem(STORAGE_KEY);
-    }
-  }
-
-  const anchor = {
-    simulationStartedAt: randomFebruary2024Date().getTime(),
-    realStartedAt: Date.now(),
-  };
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(anchor));
-  return anchor;
+  return new Date(`2024-03-29T${value("hour")}:${value("minute")}:${value("second")}+09:00`);
 }
