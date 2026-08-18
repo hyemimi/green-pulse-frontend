@@ -35,7 +35,6 @@ function KpiRowComponent({ summary, reactorLosses, playbackMinute, maxPlaybackMi
         subLabel="전체 고장 에피소드 기준"
         value={`${powerLoss.unmitigatedLoss.toFixed(2)} kWh`}
         valueClassName="text-process-red"
-        badge="위험"
       />
       <KpiCard
         label="예방 가능 전력 손실 (Avoidable Power Loss)"
