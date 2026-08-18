@@ -11,8 +11,10 @@ type KpiRowProps = {
 
 function KpiRowComponent({ summary, reactorLosses, playbackMinute, maxPlaybackMinute }: KpiRowProps) {
   const powerLoss = useMemo(() => {
-    const unmitigatedLoss = reactorLosses.reduce(
-      (sum, reactor) => sum + reactor.unmitigatedLossKwh,
+    // 사용자 요청: '방치 시 예상 전력 손실'이 시간이 지남에 따라 증가하도록
+    // 'actualLossUntilDetectionKwh'(누적된 실제 손실량)을 사용합니다.
+    const occurredLoss = reactorLosses.reduce(
+      (sum, reactor) => sum + reactor.actualLossUntilDetectionKwh,
       0,
     );
     const avoidableLoss = reactorLosses.reduce(
@@ -21,7 +23,7 @@ function KpiRowComponent({ summary, reactorLosses, playbackMinute, maxPlaybackMi
     );
 
     return {
-      unmitigatedLoss,
+      occurredLoss,
       avoidableLoss,
     };
   }, [reactorLosses]);
@@ -31,9 +33,9 @@ function KpiRowComponent({ summary, reactorLosses, playbackMinute, maxPlaybackMi
       <KpiCard label="이상 반응기 (Reactors at Risk)" value={`${summary.riskyReactors} / 6`} trend={`${summary.riskyReactors} / 6`} spark="up" />
       <KpiCard label="활성 이상 알림 (Active Anomalies)" value={`${summary.activeAnomalies}건`} trend={`${summary.activeAnomalies}건`} spark="down" />
       <KpiCard
-        label="방치 시 예상 전력 손실 (Expected Power Loss)"
-        subLabel="전체 고장 에피소드 기준"
-        value={`${powerLoss.unmitigatedLoss.toFixed(2)} kWh`}
+        label="누적 전력 손실 (Accumulated Power Loss)"
+        subLabel="고장 발생 후 현재까지 누적된 손실"
+        value={`${powerLoss.occurredLoss.toFixed(2)} kWh`}
         valueClassName="text-process-red"
       />
       <KpiCard
