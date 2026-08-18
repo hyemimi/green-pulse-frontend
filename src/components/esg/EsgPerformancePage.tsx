@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { EsgKpi, EsgPerformance, EsgTone, MonthlySaving, QuarterMilestone } from "../../api/esg";
 import { useEsgPerformance } from "../../hooks/useEsgPerformance";
 import { useSimulationClock } from "../../hooks/useSimulationClock";
@@ -34,6 +34,96 @@ function pointX(index: number, count: number, width: number) {
   return count <= 1 ? width / 2 : (index / (count - 1)) * width;
 }
 
+function MonthSelector({
+  months,
+  selectedMonth,
+  onMonthChange,
+}: {
+  months: string[];
+  selectedMonth: string;
+  onMonthChange: (month: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        className="flex h-10 min-w-[146px] items-center justify-between gap-3 rounded-[10px] border border-[#29324a] bg-[#121626] px-3.5 text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:border-process-green/50 hover:bg-[#171c2f] focus:border-process-green/70 focus:outline-none"
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-process-green/10">
+            <img alt="" className="size-4" src={calendarIcon} />
+          </span>
+          <span className="text-[14px] font-extrabold tracking-[0.2px]">{displayYearMonth(selectedMonth)}</span>
+        </span>
+        <svg
+          aria-hidden="true"
+          className={`size-4 text-[#8f9bb3] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 16 16"
+        >
+          <path d="m3.5 6 4.5 4 4.5-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
+        </svg>
+      </button>
+
+      {isOpen ? (
+        <div
+          aria-label="ESG 조회 월"
+          className="absolute right-0 top-[46px] z-50 w-full overflow-hidden rounded-[10px] border border-[#29324a] bg-[#121626] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
+          role="listbox"
+        >
+          {months.map((month) => {
+            const isSelected = month === selectedMonth;
+            return (
+              <button
+                aria-selected={isSelected}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[13px] font-bold transition ${
+                  isSelected
+                    ? "bg-process-green/15 text-process-green"
+                    : "text-[#c4ccdc] hover:bg-[#20273d] hover:text-white"
+                }`}
+                key={month}
+                role="option"
+                type="button"
+                onClick={() => {
+                  onMonthChange(month);
+                  setIsOpen(false);
+                }}
+              >
+                <span>{displayYearMonth(month)}</span>
+                {isSelected ? <span className="text-[10px] font-extrabold">선택됨</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function EsgHeader({
   data,
   selectedMonth,
@@ -61,21 +151,7 @@ function EsgHeader({
       </div>
       <div className="flex shrink-0 items-center gap-4">
         <SegmentedNavigation active="esg" tone="green" />
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#20273d] bg-[#121626] px-3 py-1.5">
-          <img alt="" className="size-4" src={calendarIcon} />
-          <select
-            aria-label="ESG 조회 월"
-            className="cursor-pointer bg-transparent text-[13px] font-semibold text-white outline-none"
-            value={selectedMonth}
-            onChange={(event) => onMonthChange(event.target.value)}
-          >
-            {monthOptions.map((month) => (
-              <option key={month} className="bg-[#121626] text-white" value={month}>
-                {displayYearMonth(month)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <MonthSelector months={monthOptions} selectedMonth={selectedMonth} onMonthChange={onMonthChange} />
         <div className="rounded-md border border-process-green bg-process-green/10 px-3 py-1.5 text-xs font-bold text-process-green">{data.status}</div>
       </div>
     </header>
