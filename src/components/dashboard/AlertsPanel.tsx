@@ -31,9 +31,9 @@ function toAlertItem(detection: Detection): AlertItem {
 function AlertsPanelComponent() {
   const { data: detections = [] } = useDetections();
 
-  const alertItems = [...detections]
-    .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-    .map(toAlertItem);
+  const sortedDetections = [...detections].sort(
+    (a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime(),
+  );
 
   return (
     <section className="panel flex h-full w-[380px] shrink-0 flex-col gap-4 overflow-hidden p-5">
@@ -42,11 +42,12 @@ function AlertsPanelComponent() {
         <span className="shrink-0 rounded bg-process-red px-1.5 py-0.5 text-[11px] font-bold text-black">LIVE</span>
       </div>
       <div className="flex min-w-0 flex-col gap-3 overflow-hidden">
-        {alertItems.map((alert) => {
+        {sortedDetections.map((detection) => {
+          const alert = toAlertItem(detection);
           const style = severityStyle[alert.severity];
 
           return (
-            <article key={alert.title} className={`flex min-w-0 items-center gap-3 rounded-lg border p-3 ${style.border} ${style.bg}`}>
+            <article key={detection.episode_id} className={`flex min-w-0 items-center gap-3 rounded-lg border p-3 ${style.border} ${style.bg}`}>
               <img alt="" className="h-[18px] w-[18px] shrink-0" src={alert.icon} />
               <div className="min-w-0 flex-1 overflow-hidden">
                 <p className="truncate text-[13px] font-bold">{alert.title}</p>
