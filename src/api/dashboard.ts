@@ -1,20 +1,19 @@
 import type { ReactorLoss, SensorTrendResponse } from "../types/dashboard";
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}`);
-  }
-
-  return response.json() as Promise<T>;
-}
+import { fetchServerJson } from "./client";
 
 export function fetchSensorTrends(reactorId: string) {
-  return fetchJson<SensorTrendResponse>(`http://localhost:3000/api/reactors/${reactorId}/sensor-trend`);
+  return fetchServerJson<SensorTrendResponse>(
+    `/api/reactors/${reactorId}/sensor-trend`,
+  );
 }
 
 export function fetchReactorPowerLoss() {
-  return fetchJson<ReactorLoss[]>("/mock/reactor-power-loss.json");
+  return fetch("/mock/reactor-power-loss.json").then((response) => {
+    if (!response.ok) {
+      throw new Error("Failed to fetch reactor power loss mock data");
+    }
+
+    return response.json() as Promise<ReactorLoss[]>;
+  });
 }
-// 이거는 아직 멀었음 
+// 이거는 아직 멀었음

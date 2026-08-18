@@ -1,3 +1,5 @@
+import { serverApiUrl } from "./client";
+
 export type Detection = {
   episode_id: number;
   reactor_id: string;
@@ -23,7 +25,7 @@ type BackendDetection = {
 };
 
 export async function fetchDetections(): Promise<Detection[]> {
-  const response = await fetch("http://localhost:3000/api/detections");
+  const response = await fetch(serverApiUrl("/api/detections"));
 
   if (!response.ok) {
     throw new Error("Failed to fetch detections");
